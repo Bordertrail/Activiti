@@ -6,8 +6,6 @@ import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.Task;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
-
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -15,10 +13,12 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class TestDemo {
-    /**
-     * 生成 activiti的数据库表
-     */
+
+    private static ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+
+    //生成Activiti数据库表
     @Test
     public void testCreateDbTable() {
         //使用classpath下的activiti.cfg.xml中的配置创建processEngine
@@ -26,6 +26,7 @@ public class TestDemo {
         System.out.println(processEngine);
     }
 
+    //创建流程
     @Test
     public void testDeployment() {
         //创建ProcessEngine
@@ -45,6 +46,7 @@ public class TestDemo {
         System.out.println("流程部署名称："+deployment.getName());
     }
 
+    //启动流程
     @Test
     public void testStartProcess() {
         //获取ProcessEngine
@@ -60,10 +62,11 @@ public class TestDemo {
         System.out.println("当前活动ID:"+myEvection.getActivityId());
     }
 
+    //根据流程Key和任务负责人来查询任务
     @Test
     public void testFindPersonalTask() {
         //声明负责人
-        String assignee = "";
+        String assignee = "wangzixuan";
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
         //创建TaskService
         TaskService taskService = processEngine.getTaskService();
@@ -81,6 +84,7 @@ public class TestDemo {
         }
     }
 
+    //通过负责人来完成当前任务
     @Test
     public void completTask() {
         //获取引擎
@@ -88,24 +92,19 @@ public class TestDemo {
         //获取taskService
         TaskService taskService = processEngine.getTaskService();
         Task task = taskService.createTaskQuery().processDefinitionKey("evection")
-                .taskAssignee("")
+                .taskAssignee("xurui")
                 .singleResult();
-
         //输出任务ID,完成任务
         taskService.complete(task.getId());
     }
 
+    //查看流程详情信息
     @Test
     public void queryProcessDefinition() {
-
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
-
         RepositoryService repositoryService = processEngine.getRepositoryService();
-
         ProcessDefinitionQuery processDefinitionQuery = repositoryService.createProcessDefinitionQuery();
-
         List<ProcessDefinition> list = processDefinitionQuery.processDefinitionKey("evection").orderByProcessDefinitionVersion().desc().list();
-
         for (ProcessDefinition processDefinition : list) {
             System.out.println("流程定义 id="+processDefinition.getId());
             System.out.println("流程定义 name="+processDefinition.getName());
@@ -115,93 +114,81 @@ public class TestDemo {
             System.out.println("ResourceName ="+processDefinition.getResourceName());
             System.out.println("DiagramResourceName ="+processDefinition.getDiagramResourceName());
         }
-
-
     }
 
-
-
+    //通过流程部署ID删除流程
     @Test
     public void deleteDeployment() {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
         //获取RepositoryService
         RepositoryService repositoryService = processEngine.getRepositoryService();
-        repositoryService.deleteDeployment("7501",true);
+        repositoryService.deleteDeployment("85001",true);
 
     }
 
-
+    //通过任务ID删除任务
     @Test
     public void deleteTask() {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
-
         TaskService taskService = processEngine.getTaskService();
-
         List<String> list = new ArrayList<String>();
-
         list.add("20005");
-//        list.add("17505");
-//        list.add("15005");
-//        list.add("12505");
-
         for (String s : list) {
-//            taskService.resolveTask(s);
             taskService.deleteTask(s);
         }
-
     }
 
+    //生成bpmn和png文件
     @Test
     public void  queryBpmnFile() throws IOException {
-//        1、得到引擎
+        //1、得到引擎
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
-//        2、获取repositoryService
+        //2、获取repositoryService
         RepositoryService repositoryService = processEngine.getRepositoryService();
-//        3、得到查询器：ProcessDefinitionQuery，设置查询条件,得到想要的流程定义
+        //3、得到查询器：ProcessDefinitionQuery，设置查询条件,得到想要的流程定义
         ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery()
                 .processDefinitionKey("evection")
                 .singleResult();
-//        4、通过流程定义信息，得到部署ID
+        //4、通过流程定义信息，得到部署ID
         String deploymentId = processDefinition.getDeploymentId();
-//        5、通过repositoryService的方法，实现读取图片信息和bpmn信息
+        //5、通过repositoryService的方法，实现读取图片信息和bpmn信息
 
         String x = processDefinition.getResourceName();
         String y = processDefinition.getDiagramResourceName();
-//        png图片的流
+        //png图片的流
         InputStream pngInput = repositoryService.getResourceAsStream(deploymentId,"bpmn/diagram.png");
-//        bpmn文件的流
+        //bpmn文件的流
         InputStream bpmnInput = repositoryService.getResourceAsStream(deploymentId, processDefinition.getResourceName());
-//        6、构造OutputStream流
+        //6、构造OutputStream流
         File file_png = new File("x:/diagram.png");
         File file_bpmn = new File("x:/evection.bpmn20.xml");
         FileOutputStream bpmnOut = new FileOutputStream(file_bpmn);
         FileOutputStream pngOut = new FileOutputStream(file_png);
-//        7、输入流，输出流的转换
+        //7、输入流，输出流的转换
         IOUtils.copy(pngInput,pngOut);
         IOUtils.copy(bpmnInput,bpmnOut);
-//        8、关闭流
+        //8、关闭流
         pngOut.close();
         bpmnOut.close();
         pngInput.close();
         bpmnInput.close();
     }
 
-
+    //添加业务标识ID
     @Test
     public void addBusinessKey(){
-//        1、得到ProcessEngine
+        //1、得到ProcessEngine
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
-//        2、得到RunTimeService
+        //2、得到RunTimeService
         RuntimeService runtimeService = processEngine.getRuntimeService();
-//        3、启动流程实例，同时还要指定业务标识businessKey，也就是出差申请单id，这里是1001
+        //3、启动流程实例，同时还要指定业务标识businessKey，也就是出差申请单id，这里是1001
         ProcessInstance processInstance = runtimeService.
                 startProcessInstanceByKey("evection","1001");
-//        4、输出processInstance相关属性
+        //4、输出processInstance相关属性
         System.out.println("业务id=="+processInstance.getBusinessKey());
-
     }
 
-
+    //
     @Test
     public void queryProcessInstance() {
         // 流程定义key
@@ -226,5 +213,26 @@ public class TestDemo {
         }
     }
 
-
+    // 查询当前个人待执行的任务
+    @Test
+    public void findPersonalTaskList() {
+        // 流程定义key
+        String processDefinitionKey = "evection";
+        // 任务负责人
+        String assignee = "xurui";
+        // 获取TaskService
+        TaskService taskService = processEngine.getTaskService();
+        List<Task> taskList = taskService.createTaskQuery()
+                .processDefinitionKey(processDefinitionKey)
+                .includeProcessVariables()
+                .taskAssignee(assignee)
+                .list();
+        for (Task task : taskList) {
+            System.out.println("----------------------------");
+            System.out.println("流程实例id： " + task.getProcessInstanceId());
+            System.out.println("任务id： " + task.getId());
+            System.out.println("任务负责人： " + task.getAssignee());
+            System.out.println("任务名称： " + task.getName());
+        }
+    }
 }
